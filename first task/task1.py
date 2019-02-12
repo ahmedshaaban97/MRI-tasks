@@ -4,13 +4,16 @@ from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget , QApplica
 from PyQt5.QtCore import QSize,pyqtSlot
 from PyQt5.QtGui import QIcon, QPixmap
 from PIL import Image
+import numpy as np
+from numpy import array
+from PIL.ImageQt import ImageQt
 
 
 
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("ahmed shaaban")
+        self.setWindowTitle("Image Converter")
         self.setGeometry(500,500,500,300)
         self.layout()
         
@@ -25,7 +28,7 @@ class Window(QMainWindow):
     def label(self):
         li = QLabel(self)
         li.setText('Numer Of Zeros')
-        li.move(250,0)
+        li.move(250,10)
         
     
     def home(self):
@@ -36,12 +39,12 @@ class Window(QMainWindow):
         
     def spinBox(self):
         sbox = QSpinBox(self)
-        sbox.move(250,30)
+        sbox.move(350,10)
         
     @pyqtSlot()
     def on_click(self):
         name = QFileDialog()
-        imgPath = name.getOpenFileName(self,'open file','c:\\','Image files (*.jpg *.png)')
+        imgPath = name.getOpenFileName(self,'open file','','Image files (*.jpg *.png *.jpeg)')
         self.checkImage(imgPath[0])
         
     
@@ -53,6 +56,10 @@ class Window(QMainWindow):
              self.imgFalseMsg()
          else :
              self.openImage(path)
+             fourierImage = self.fourierTransform(path)
+             array = self.convertImageToArray(fourierImage)
+             imageArray = self.convertArrayToImage(array)
+             self.showArrayImage(imageArray)
         
         
     def imgFalseMsg(self):
@@ -70,6 +77,38 @@ class Window(QMainWindow):
        im = Image.open(imagePath)
        width, height = im.size
        label.show()
+       
+    def convertImageToArray(self,img):
+         arr = array(img)
+         print('this is image pixel function')
+         print("this is the array")
+         arr[0][0][0] = 0
+         arr[0][0][1] = 0
+         arr[0][0][2] = 0
+         arr[0][1][0] = 0
+         arr[0][5][0] = 0
+         return arr
+         
+         
+    def convertArrayToImage(self,arr):
+        img = Image.fromarray(arr)
+        return img
+        
+        
+    def showArrayImage(self,img):
+        label = QLabel(self)
+        qimage = ImageQt(img)
+        pixmap = QPixmap.fromImage(qimage)
+        label.setPixmap(pixmap)
+        label.setGeometry(300,100,128,128)
+        label.show()
+        
+    def fourierTransform(self,path):
+        img = Image.open(path)
+        f = np.fft.fft2(img)
+        fshift = np.fft.fftshift(f) 
+        magnitude_spectrum = 20*np.log(np.abs(fshift))
+        return magnitude_spectrum
        
      
         
