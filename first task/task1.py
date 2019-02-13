@@ -1,12 +1,14 @@
 import sys
 from PyQt5 import QtCore, QtWidgets , QtGui
 from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget , QApplication,QPushButton,QLabel,QInputDialog,QSpinBox,QFileDialog
-from PyQt5.QtCore import QSize,pyqtSlot
+from PyQt5.QtCore import QSize,pyqtSlot,QTimer
 from PyQt5.QtGui import QIcon, QPixmap
 from PIL import Image
 import numpy as np
 from numpy import array
 from PIL.ImageQt import ImageQt
+import time
+
 
 
 
@@ -14,8 +16,10 @@ class Window(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Image Converter")
-        self.setGeometry(500,500,500,300)
+        self.setGeometry(500,500,500,500)
         self.layout()
+        self.path = 'this is empyt pass'
+        self.img = ''
         
         
     def layout(self):
@@ -55,11 +59,12 @@ class Window(QMainWindow):
              print('invalid pic')
              self.imgFalseMsg()
          else :
+             self.path = path
              self.openImage(path)
              fourierImage = self.fourierTransform(path)
-             array = self.convertImageToArray(fourierImage)
-             imageArray = self.convertArrayToImage(array)
-             self.showArrayImage(imageArray)
+             modifiedImage = self.convertArrayToImage(fourierImage)
+             self.showArrayImage(modifiedImage,250,50)
+             self.convertButton(fourierImage)
         
         
     def imgFalseMsg(self):
@@ -79,14 +84,8 @@ class Window(QMainWindow):
        label.show()
        
     def convertImageToArray(self,img):
-         arr = array(img)
+         arr = np.asarray(img, np.uint8)
          print('this is image pixel function')
-         print("this is the array")
-         arr[0][0][0] = 0
-         arr[0][0][1] = 0
-         arr[0][0][2] = 0
-         arr[0][1][0] = 0
-         arr[0][5][0] = 0
          return arr
          
          
@@ -95,20 +94,60 @@ class Window(QMainWindow):
         return img
         
         
-    def showArrayImage(self,img):
+    def showArrayImage(self,img,x,y):
         label = QLabel(self)
         qimage = ImageQt(img)
         pixmap = QPixmap.fromImage(qimage)
         label.setPixmap(pixmap)
-        label.setGeometry(300,100,128,128)
+        label.setGeometry(x,y,128,128)
         label.show()
         
     def fourierTransform(self,path):
-        img = Image.open(path)
-        f = np.fft.fft2(img)
-        fshift = np.fft.fftshift(f) 
-        magnitude_spectrum = 20*np.log(np.abs(fshift))
+        img = Image.open(path).convert('RGB')
+        arrayImage = self.convertImageToArray(img)
+        fourierImage = np.fft.fft2(arrayImage,axes=(0,1))
+        fourierImage = np.fft.fftshift(fourierImage)
+        magnitude_spectrum = 20*np.log(np.abs(fourierImage))
+        magnitude_spectrum = np.uint8(magnitude_spectrum)
         return magnitude_spectrum
+    
+    
+    def convertButton(self,img):
+        btn = QPushButton("Convert Image",self)
+        btn.setToolTip('This is an example button')
+        btn.clicked.connect(self.zerosFromOutToIn)
+        btn.move(390,150)
+        print('this is the convert button function')
+        btn.show()
+        
+    def zerosFromOutToIn(self,img):
+        fourierImage = self.fourierTransform(self.path)
+        for i in range(len(fourierImage)):
+            upFrameZeros = self.upFrameZeros(fourierImage,i)
+            downFrameZeros = self.downFrameZeros(upFrameZeros,-1-i)
+            img = self.convertArrayToImage(downFrameZeros)
+            self.showArrayImage(img,10,200)
+            time.sleep(0.1)
+            
+            
+        
+        
+    def upFrameZeros(self,img,position):
+        for i in range(len(img)):
+            for j in range(len(img[0][0])):
+                img[position][i][j] = 0
+                img[i][position][j] = 0
+        return img
+    
+    def downFrameZeros(self,img,position):
+        for i in range(len(img)):
+            for j in range(len(img[0][0])):
+                img[position][i][j] = 0
+                img[i][position][j] = 0
+        return img
+    
+        
+    
        
      
         
