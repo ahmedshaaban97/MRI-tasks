@@ -1,13 +1,15 @@
 import sys
 from PyQt5 import QtCore, QtWidgets , QtGui
 from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget , QApplication,QPushButton,QLabel,QInputDialog,QSpinBox,QFileDialog
-from PyQt5.QtCore import QSize,pyqtSlot,QTimer
+from PyQt5.QtCore import QSize,pyqtSlot,QTimer,QThread
 from PyQt5.QtGui import QIcon, QPixmap
 from PIL import Image
 import numpy as np
 from numpy import array
 from PIL.ImageQt import ImageQt
 import time
+import threading
+ 
 
 
 
@@ -64,7 +66,11 @@ class Window(QMainWindow):
              fourierImage = self.fourierTransform(path)
              modifiedImage = self.convertArrayToImage(fourierImage)
              self.showArrayImage(modifiedImage,250,50)
-             self.convertButton(fourierImage)
+             
+             #thread2 = threading.Thread(target=self.showArrayImage, args=(modifiedImage,50,150,),daemon = True).start()
+             self.convertButton()
+             #threading.Thread(target=self.convertButton).start()
+             
         
         
     def imgFalseMsg(self):
@@ -112,35 +118,39 @@ class Window(QMainWindow):
         return magnitude_spectrum
     
     
-    def convertButton(self,img):
+    def convertButton(self):
         btn = QPushButton("Convert Image",self)
         btn.setToolTip('This is an example button')
-        btn.clicked.connect(self.zerosFromOutToIn)
         btn.move(390,150)
         print('this is the convert button function')
         btn.show()
+        threading.Thread(target=self.zerosFromOutToIn).start()
+        #btn.clicked.connect(self.zerosFromOutToIn)
         
-    def zerosFromOutToIn(self,img):
+    def zerosFromOutToIn(self):
         fourierImage = self.fourierTransform(self.path)
-        for i in range(len(fourierImage)):
+        for i in range(70):
             upFrameZeros = self.upFrameZeros(fourierImage,i)
             downFrameZeros = self.downFrameZeros(upFrameZeros,-1-i)
             img = self.convertArrayToImage(downFrameZeros)
-            self.showArrayImage(img,10,200)
-            time.sleep(0.1)
+            thread1 = threading.Thread(target=self.showArrayImage, args=(img,10,200,),daemon = True).start()
+            
+            #self.showArrayImage(img,10,200)
+            
+        
             
             
         
         
     def upFrameZeros(self,img,position):
-        for i in range(len(img)):
+        for i in range(128):
             for j in range(len(img[0][0])):
                 img[position][i][j] = 0
                 img[i][position][j] = 0
         return img
     
     def downFrameZeros(self,img,position):
-        for i in range(len(img)):
+        for i in range(128):
             for j in range(len(img[0][0])):
                 img[position][i][j] = 0
                 img[i][position][j] = 0
