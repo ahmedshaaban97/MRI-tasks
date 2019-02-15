@@ -146,15 +146,24 @@ class Window(QMainWindow):
         #threading.Thread(target=self.zerosFromOutToIn).start()
         #threading.Thread(target=btn.clicked.connect,args=(self.zerosFromOutToIn,)).start()
 
+        
+        btn.clicked.connect(self.startConverting)
+        #threading.Thread(target=btn.clicked.connect, args=(self.zerosFromOutToIn,),daemon = True).start()
+       # threading.Thread(target=btn.clicked.connect, args=(self.zerosFromInToOut,),daemon = True).start()
         #btn.clicked.connect(self.zerosFromOutToIn)
+        
         #btn.clicked.connect(self.zerosFromInToOut)
         print('this is the step value   ' ,self.step)
         
+    def startConverting(self):
+        self.zerosFromInToOut()
+        self.zerosFromOutToIn()
+        
     def zerosFromOutToIn(self):
         fourierImage = self.fourierTransform(self.path)
+        print(fourierImage)
         value = self.spinb.value()
         print('this is the mult ', 100/value)
-        self.zerosFromInToOut()
         for i in range(value):
             upFrameZeros = self.upFrameZeros(fourierImage,i)
             downFrameZeros = self.downFrameZeros(upFrameZeros,-1-i)
@@ -162,7 +171,9 @@ class Window(QMainWindow):
             #threading.Thread(target=self.showArrayImage, args=(self,img,10,200,),daemon = True).start()
             self.showArrayImage(img,10,200)
             self.progress.setValue(i*(100/(value-1)))
-            
+        #threading.Thread(target=self.zerosFromInToOut,daemon = True).start()
+        
+        
         
             
             #threading.Thread(target=progressBar.setValue, args=(i,),daemon = True).start()
@@ -186,26 +197,29 @@ class Window(QMainWindow):
     
     def zerosFromInToOut(self):
         fourierImage = self.fourierTransform(self.path)
+        #print(fourierImage)
+        #img = self.convertImageToArray(img)
         value = self.spinb.value()
         step = 2
         for i in range(value):
-            upFrameZeros = self.upLeftFrameZeros(fourierImage,step,32-i)
-            downFrameZeros = self.downRightFrameZeros(upFrameZeros,step,33+i)
-            img = self.convertArrayToImage(downFrameZeros)
-            #threading.Thread(target=self.showArrayImage, args=(self,img,10,200,),daemon = True).start()
-            self.showArrayImage(img,10,350)
+            upFrameZeros = self.upLeftFrameZeros(fourierImage,step,63-i)
+            downFrameZeros = self.downRightFrameZeros(upFrameZeros,step,64+i)
+            newimg = self.convertArrayToImage(downFrameZeros)
+            #threading.Thread(target=self.showArrayImage, args=(img,10,350,),daemon = True).start()
+            self.showArrayImage(newimg,10,350)
+            step = step + 2
             #self.progress.setValue(i*(100/(value-1)))
 
        
     def upLeftFrameZeros(self,img,step,position):
-        for i in range(100):
+        for i in range(step):
             for j in range(len(img[0][0])):
                 img[position][position+i][j] = 0
                 img[(position+i)][position][j] = 0
         return img
         
     def downRightFrameZeros(self,img,step,position):
-        for i in range(32):
+        for i in range(step):
             for j in range(len(img[0][0])):
                 img[position][position-i][j] = 0
                 img[(position-i)][position][j] = 0
