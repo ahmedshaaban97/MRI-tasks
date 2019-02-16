@@ -9,6 +9,40 @@ from numpy import array
 from PIL.ImageQt import ImageQt
 import time
 import threading
+from scipy.fftpack import ifft
+
+
+class hiThread(QThread):
+
+    def __init__(self,name):
+        QThread.__init__(self)
+        
+
+    def __del__(self):
+        self.wait() 
+        
+    
+    def stopConverting(self):
+        btn = QPushButton("Convert InOut",self)
+        btn.setToolTip('This is an example button')
+        btn.move(390,200)
+        #print('this is the convert in outbutton function')
+        btn.show()
+        #threading.Thread(target=btn.clicked.connect,args=(self.changeConvertStatus,)).start()
+        btn.clicked.connect(self.changeConvertStatus)
+        
+    def hello(self):
+        while 1 :
+            
+            print('hello ')
+            time.sleep(1)
+            
+    def run(self):
+        self.hello()
+
+    
+        
+        
  
 
 
@@ -20,6 +54,7 @@ class Window(QMainWindow):
         self.setGeometry(500,500,500,500)
         self.spinb = ''
         self.fimg = ''
+        self.allowconvert = 0
         self.layout()
         self.path = 'this is empyt pass'
         
@@ -40,28 +75,32 @@ class Window(QMainWindow):
         
     def label(self):
         li = QLabel(self)
-        li.setText('Numer Of Zeros')
-        li.move(250,10)
+        li.setText('Conversion Speed')
+        li.setGeometry(145,100,120,20)
+        #li.move(145,100)
         
     
     def home(self):
         btn = QPushButton("Select image",self)
         btn.setToolTip('This is an example button')
         btn.clicked.connect(self.on_click)
-        btn.move(10,10)
+        btn.move(140,10)
         
 
         
     def spinBox(self):
         sbox = QSpinBox(self)
-        sbox.setValue(8)
-        sbox.move(350,10)
+        sbox.setValue(1)
+        sbox.move(255,100)
+        sbox.setMaximum(8)
         return sbox
         
         
     def progressBar(self):
         progressBar = QProgressBar(self)
-        progressBar.setGeometry(250,250,230,20)
+        progressBar.setGeometry(5,380,500,20)
+        progressBar.setValue(0)
+        
         return progressBar
         
     @pyqtSlot()
@@ -81,14 +120,35 @@ class Window(QMainWindow):
              self.path = path
              self.openImage(path)
              fourierImage = self.fourierTransform(path)
+             #InverseImage = self.inverseFourier(fourierImage)
+             
+             #print('fourier type ',type(fourierImage))
+             #InverseImage=np.fft.ifft(fourierImage)
+             #print('invfourier type ',InverseImage[0][0])
              self.fimg = fourierImage
              modifiedImage = self.convertArrayToImage(fourierImage)
-             self.showArrayImage(modifiedImage,250,50)
+             self.showArrayImage(modifiedImage,362,50)
              
              #thread2 = threading.Thread(target=self.showArrayImage, args=(modifiedImage,50,150,),daemon = True).start()
              self.convertButton()
-             self.convertInOutButton()
+             #self.helloThread = hiThread('ahmed')
+             #self.connect(self.helloThread, SIGNAL("finished()"), self.sc)
+             #self.helloThread.stopConverting()
+             #self.helloThread.start()
+             #self.helloThread.hello('ahmed')
+             #threading.Thread(target=self.stopConverting,args=()).start()
+             #self.stopConverting()
              #threading.Thread(target=self.convertButton).start()
+             #self.stop = self.stopConverting()
+             #self.stop.show()
+             #self.thread = QThread()
+             #self.window = Window()
+             #self.window.moveToThread(self.thread)
+             #self.stop.clicked.connect(self.thread.start)
+             #self.thread.started.connect(self.window.changeConvertStatus)
+             
+             
+             
              
         
     def imgFalseMsg(self):
@@ -128,6 +188,7 @@ class Window(QMainWindow):
         
     def fourierTransform(self,path):
         img = Image.open(path).convert('RGB')
+        
         arrayImage = self.convertImageToArray(img)
         fourierImage = np.fft.fft2(arrayImage,axes=(0,1))
         fourierImage = np.fft.fftshift(fourierImage)
@@ -135,15 +196,29 @@ class Window(QMainWindow):
         magnitude_spectrum = np.uint8(magnitude_spectrum)
         return magnitude_spectrum
     
+    def inverseFourier(self,img):
+        fourierImage = np.fft.ifft(img)
+        fourierImage = np.fft.fftshift(fourierImage)
+        magnitude_spectrum = 20*np.log(np.abs(fourierImage))
+        magnitude_spectrum = np.uint8(magnitude_spectrum)
+        return magnitude_spectrum
     
+        
     
-    def convertInOutButton(self):
+    def stopConverting(self):
         btn = QPushButton("Convert InOut",self)
         btn.setToolTip('This is an example button')
-        btn.move(390,350)
+        btn.move(390,200)
         #print('this is the convert in outbutton function')
         btn.show()
-        btn.clicked.connect(self.zerosFromInToOut)
+        #threading.Thread(target=btn.clicked.connect,args=(self.changeConvertStatus,)).start()
+        btn.clicked.connect(self.changeConvertStatus)
+        #return btn
+        
+    def changeConvertStatus(self):
+        self.allowconvert = 0
+        
+        
         
         
     
@@ -151,7 +226,7 @@ class Window(QMainWindow):
     def convertButton(self):
         btn = QPushButton("Convert Image",self)
         btn.setToolTip('This is an example button')
-        btn.move(390,150)
+        btn.move(252,10)
         #print('this is the convert button function')
         btn.show()
         progressBar = self.progressBar()
@@ -162,20 +237,31 @@ class Window(QMainWindow):
         #threading.Thread(target=btn.clicked.connect,args=(self.zerosFromOutToIn,)).start()
 
         
-        btn.clicked.connect(self.startConverting)
+        btn.clicked.connect(self.startConvertState)
         #threading.Thread(target=btn.clicked.connect, args=(self.zerosFromOutToIn,),daemon = True).start()
        # threading.Thread(target=btn.clicked.connect, args=(self.zerosFromInToOut,),daemon = True).start()
         #threading.Thread(target=btn.clicked.connect, args=(self.startConverting,),daemon = True).start()
         #btn.clicked.connect(self.zerosFromOutToIn)
         
         #btn.clicked.connect(self.zerosFromInToOut)
+    def startConvertState(self):
+        self.allowconvert = 1
+        self.startConverting()
         
         
     def startConverting(self):
-        for i in range (5):
-        
-            self.zerosFromOutToIn()
-            self.zerosFromInToOut()
+        for i in range (3):
+            
+            #self.stopConverting()
+            #time.sleep(0.1)
+            if self.allowconvert == 1:
+                self.zerosFromOutToIn()
+                self.zerosFromInToOut()
+                #print('you are allowed to convert')
+                #time.sleep(1)
+            elif(self.allowconvert == 0):
+                #print('stop is clicked')
+                break
         
         
     def restoreOriginalImage(self) : 
@@ -194,7 +280,9 @@ class Window(QMainWindow):
         fourierFImage = self.fourierTransform(self.path)
             
         #print(fourierImage)
-        #value = self.spinb.value()
+        
+        spinValue = self.spinb.value()
+        
         value = 64
         step = 2
             #label = QLabel(self)
@@ -204,7 +292,8 @@ class Window(QMainWindow):
                 #print('first run')
             upFrameZeros = self.upFrameZeros(fourierFImage,i)
             downFrameZeros = self.downFrameZeros(upFrameZeros,-1-i)
-            img = Image.fromarray(downFrameZeros)
+            img = self.inverseFourier(downFrameZeros)
+            img = Image.fromarray(img)
             img.save('my.png')
                 
                 #qimage = ImageQt(fsimg)
@@ -212,9 +301,9 @@ class Window(QMainWindow):
             pixmap = QPixmap('my.png')
             pixmap = pixmap.scaled(int(pixmap.height()),int(pixmap.width()))
             label.setPixmap(pixmap)
-            label.setGeometry(10,200,128,128)
+            label.setGeometry(186,200,128,128)
             label.show()
-            time.sleep(0.009)
+            time.sleep(0.009-spinValue*0.001)
                 
                 
             
@@ -235,7 +324,7 @@ class Window(QMainWindow):
     def upFrameZeros(self,img,position):
         #print('this is upFrameZeros')
         for i in range(128):
-            for j in range(len(img[0][0])):
+            for j in range(3):
                 img[position][i][j] = 0
                 img[i][position][j] = 0
             
@@ -258,6 +347,8 @@ class Window(QMainWindow):
         fourierFImage2 = self.fourierTransform(self.path)
         #print(fourierImage)
         #value = self.spinb.value()
+        #value = self.spinb.value()
+        spinValue = self.spinb.value()
         value = 64
         step = 2
             #label = QLabel(self)
@@ -267,7 +358,8 @@ class Window(QMainWindow):
                 #print('first run')
             upLeftFrameZeros = self.upLeftFrameZeros(fourierFImage2,step,63-i)
             downRightFrameZeros = self.downRightFrameZeros(upLeftFrameZeros,step,64+i)
-            img = Image.fromarray(downRightFrameZeros)
+            img = self.inverseFourier(downRightFrameZeros)
+            img = Image.fromarray(img)
             img.save('my.png')
                 
                 #qimage = ImageQt(fsimg)
@@ -275,9 +367,9 @@ class Window(QMainWindow):
             pixmap = QPixmap('my.png')
             pixmap = pixmap.scaled(int(pixmap.height()),int(pixmap.width()))
             label.setPixmap(pixmap)
-            label.setGeometry(10,200,128,128)
+            label.setGeometry(186,200,128,128)
             label.show()
-            time.sleep(0.009)
+            time.sleep(0.009-spinValue*0.001)
             step = step + 2
                 
                 
