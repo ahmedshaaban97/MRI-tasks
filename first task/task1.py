@@ -275,6 +275,7 @@ class Window(QMainWindow):
         
     def zerosFromOutToIn(self):
         label = QLabel(self)
+        label1 = QLabel(self)
         
         #while 1 :
         fourierFImage = self.fourierTransform(self.path)
@@ -292,8 +293,8 @@ class Window(QMainWindow):
                 #print('first run')
             upFrameZeros = self.upFrameZeros(fourierFImage,i)
             downFrameZeros = self.downFrameZeros(upFrameZeros,-1-i)
-            img = self.inverseFourier(downFrameZeros)
-            img = Image.fromarray(img)
+            
+            img = Image.fromarray(downFrameZeros)
             img.save('my.png')
                 
                 #qimage = ImageQt(fsimg)
@@ -301,8 +302,20 @@ class Window(QMainWindow):
             pixmap = QPixmap('my.png')
             pixmap = pixmap.scaled(int(pixmap.height()),int(pixmap.width()))
             label.setPixmap(pixmap)
-            label.setGeometry(186,200,128,128)
+            label.setGeometry(362,200,128,128)
             label.show()
+            
+            
+            
+            imgi = self.inverseFourier(downFrameZeros)
+            imgi = Image.fromarray(imgi)
+            imgi.save('myi.png')
+            pixmap2 = QPixmap('myi.png')
+            pixmap2 = pixmap2.scaled(int(pixmap2.height()),int(pixmap2.width()))
+            label1.setPixmap(pixmap2)
+            label1.setGeometry(10,200,128,128)
+            label1.show()
+
             time.sleep(0.009-spinValue*0.001)
                 
                 
@@ -342,6 +355,7 @@ class Window(QMainWindow):
     
     def zerosFromInToOut(self):
         label = QLabel(self)
+        label1 = QLabel(self)
     
         #while 1 :
         fourierFImage2 = self.fourierTransform(self.path)
@@ -358,8 +372,7 @@ class Window(QMainWindow):
                 #print('first run')
             upLeftFrameZeros = self.upLeftFrameZeros(fourierFImage2,step,63-i)
             downRightFrameZeros = self.downRightFrameZeros(upLeftFrameZeros,step,64+i)
-            img = self.inverseFourier(downRightFrameZeros)
-            img = Image.fromarray(img)
+            img = Image.fromarray(downRightFrameZeros)
             img.save('my.png')
                 
                 #qimage = ImageQt(fsimg)
@@ -367,13 +380,24 @@ class Window(QMainWindow):
             pixmap = QPixmap('my.png')
             pixmap = pixmap.scaled(int(pixmap.height()),int(pixmap.width()))
             label.setPixmap(pixmap)
-            label.setGeometry(186,200,128,128)
+            label.setGeometry(362,200,128,128)
             label.show()
-            time.sleep(0.009-spinValue*0.001)
-            step = step + 2
+           
                 
                 
             
+            imgi = self.inverseFourier(downRightFrameZeros)
+            imgi = Image.fromarray(imgi)
+            imgi.save('myi.png')
+            pixmap2 = QPixmap('myi.png')
+            pixmap2 = pixmap2.scaled(int(pixmap2.height()),int(pixmap2.width()))
+            label1.setPixmap(pixmap2)
+            label1.setGeometry(10,200,128,128)
+            label1.show()
+            
+            time.sleep(0.009-spinValue*0.001)
+            step = step + 2
+
                 
             #fourierImage = self.convertArrayToImage(downRightFrameZeros)
                 #self.showArrayImage(newimg,10,200)
