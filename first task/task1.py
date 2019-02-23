@@ -92,7 +92,7 @@ class Window(QMainWindow):
         sbox = QSpinBox(self)
         sbox.setValue(1)
         sbox.move(255,100)
-        sbox.setMaximum(8)
+        sbox.setMaximum(64)
         return sbox
         
         
@@ -105,6 +105,7 @@ class Window(QMainWindow):
         
     @pyqtSlot()
     def on_click(self):
+        self.changeConvertStatus()
         name = QFileDialog()
         imgPath = name.getOpenFileName(self,'open file','','Image files (*.jpg *.png *.jpeg)')
         self.checkImage(imgPath[0])
@@ -131,6 +132,7 @@ class Window(QMainWindow):
              
              #thread2 = threading.Thread(target=self.showArrayImage, args=(modifiedImage,50,150,),daemon = True).start()
              self.convertButton()
+             self.stopConverting()
              #self.helloThread = hiThread('ahmed')
              #self.connect(self.helloThread, SIGNAL("finished()"), self.sc)
              #self.helloThread.stopConverting()
@@ -187,7 +189,7 @@ class Window(QMainWindow):
         label.show()
         
     def fourierTransform(self,path):
-        img = Image.open(path).convert('RGB')
+        img = Image.open(path)
         
         arrayImage = self.convertImageToArray(img)
         fourierImage = np.fft.fft2(arrayImage,axes=(0,1))
@@ -197,8 +199,8 @@ class Window(QMainWindow):
         return magnitude_spectrum
     
     def inverseFourier(self,img):
-        fourierImage = np.fft.ifft(img)
-        fourierImage = np.fft.fftshift(fourierImage)
+        fourierImage = np.fft.fftshift(img)
+        fourierImage = np.fft.ifft2(fourierImage)
         magnitude_spectrum = 20*np.log(np.abs(fourierImage))
         magnitude_spectrum = np.uint8(magnitude_spectrum)
         return magnitude_spectrum
@@ -206,9 +208,9 @@ class Window(QMainWindow):
         
     
     def stopConverting(self):
-        btn = QPushButton("Convert InOut",self)
+        btn = QPushButton("Stop",self)
         btn.setToolTip('This is an example button')
-        btn.move(390,200)
+        btn.move(200,250)
         #print('this is the convert in outbutton function')
         btn.show()
         #threading.Thread(target=btn.clicked.connect,args=(self.changeConvertStatus,)).start()
@@ -227,7 +229,7 @@ class Window(QMainWindow):
         btn = QPushButton("Convert Image",self)
         btn.setToolTip('This is an example button')
         btn.move(252,10)
-        #print('this is the convert button function')
+        print('this is the convert button function')
         btn.show()
         progressBar = self.progressBar()
         progressBar.show()
@@ -237,30 +239,31 @@ class Window(QMainWindow):
         #threading.Thread(target=btn.clicked.connect,args=(self.zerosFromOutToIn,)).start()
 
         
-        btn.clicked.connect(self.startConvertState)
+        btn.clicked.connect(self.startConverting)
         #threading.Thread(target=btn.clicked.connect, args=(self.zerosFromOutToIn,),daemon = True).start()
        # threading.Thread(target=btn.clicked.connect, args=(self.zerosFromInToOut,),daemon = True).start()
         #threading.Thread(target=btn.clicked.connect, args=(self.startConverting,),daemon = True).start()
         #btn.clicked.connect(self.zerosFromOutToIn)
         
         #btn.clicked.connect(self.zerosFromInToOut)
-    def startConvertState(self):
-        self.allowconvert = 1
-        self.startConverting()
+    
         
         
     def startConverting(self):
-        for i in range (3):
+        self.allowconvert = 1
+        while 1:
             
             #self.stopConverting()
             #time.sleep(0.1)
+            QApplication.processEvents()
             if self.allowconvert == 1:
                 self.zerosFromOutToIn()
                 self.zerosFromInToOut()
-                #print('you are allowed to convert')
+                print('you are allowed to convert')
                 #time.sleep(1)
-            elif(self.allowconvert == 0):
-                #print('stop is clicked')
+            
+            if(self.allowconvert == 0):
+                print('stop is clicked')
                 break
         
         
@@ -290,33 +293,39 @@ class Window(QMainWindow):
             #print('this is the mult ', 100/value)
         
         for i in range(64):
-                #print('first run')
-            upFrameZeros = self.upFrameZeros(fourierFImage,i)
-            downFrameZeros = self.downFrameZeros(upFrameZeros,-1-i)
             
-            img = Image.fromarray(downFrameZeros)
-            img.save('my.png')
+            if self.allowconvert == 1:
+            #print('first run')
+                upFrameZeros = self.upFrameZeros(fourierFImage,i)
+                downFrameZeros = self.downFrameZeros(upFrameZeros,-1-i)
+                
+                img = Image.fromarray(downFrameZeros)
+                img.save('my.png')
                 
                 #qimage = ImageQt(fsimg)
                 #pixmap = QPixmap.fromImage(qimage)
-            pixmap = QPixmap('my.png')
-            pixmap = pixmap.scaled(int(pixmap.height()),int(pixmap.width()))
-            label.setPixmap(pixmap)
-            label.setGeometry(362,200,128,128)
-            label.show()
+                if i % spinValue == 0 :
+                    pixmap = QPixmap('my.png')
+                    pixmap = pixmap.scaled(int(pixmap.height()),int(pixmap.width()))
+                    label.setPixmap(pixmap)
+                    label.setGeometry(362,200,128,128)
+                    label.show()
+                    print (i)
             
-            
-            
-            imgi = self.inverseFourier(downFrameZeros)
-            imgi = Image.fromarray(imgi)
-            imgi.save('myi.png')
-            pixmap2 = QPixmap('myi.png')
-            pixmap2 = pixmap2.scaled(int(pixmap2.height()),int(pixmap2.width()))
-            label1.setPixmap(pixmap2)
-            label1.setGeometry(10,200,128,128)
-            label1.show()
+                QApplication.processEvents()
+                
+                imgi = self.inverseFourier(downFrameZeros)
+                imgi = Image.fromarray(imgi)
+                imgi.save('myi.png')
+                if i % spinValue == 0 :
+                    pixmap2 = QPixmap('myi.png')
+                    pixmap2 = pixmap2.scaled(int(pixmap2.height()),int(pixmap2.width()))
+                    label1.setPixmap(pixmap2)
+                    label1.setGeometry(10,200,128,128)
+                    label1.show()
 
-            time.sleep(0.009-spinValue*0.001)
+            #time.sleep(0.009-spinValue*0.001)
+                time.sleep(0.009)
                 
                 
             
@@ -327,7 +336,7 @@ class Window(QMainWindow):
             #threading.Thread(target=self.showArrayImage, args=(fsimg,10,200,),daemon = True).start()
                 #self.showArrayImage(fsimg,10,200)
                 #time.sleep(0.2)
-            self.progress.setValue(i*(100/(value-1)))
+                self.progress.setValue(i*(100/(value-1)))
         
         
         
@@ -369,34 +378,38 @@ class Window(QMainWindow):
             #print('this is the mult ', 100/value)
         
         for i in range(64):
-                #print('first run')
-            upLeftFrameZeros = self.upLeftFrameZeros(fourierFImage2,step,63-i)
-            downRightFrameZeros = self.downRightFrameZeros(upLeftFrameZeros,step,64+i)
-            img = Image.fromarray(downRightFrameZeros)
-            img.save('my.png')
+            if self.allowconvert == 1:
+            #print('first run')
+                upLeftFrameZeros = self.upLeftFrameZeros(fourierFImage2,step,63-i)
+                downRightFrameZeros = self.downRightFrameZeros(upLeftFrameZeros,step,64+i)
+                img = Image.fromarray(downRightFrameZeros)
+                img.save('my.png')
                 
                 #qimage = ImageQt(fsimg)
                 #pixmap = QPixmap.fromImage(qimage)
-            pixmap = QPixmap('my.png')
-            pixmap = pixmap.scaled(int(pixmap.height()),int(pixmap.width()))
-            label.setPixmap(pixmap)
-            label.setGeometry(362,200,128,128)
-            label.show()
+                if i % spinValue == 0 :
+                    pixmap = QPixmap('my.png')
+                    pixmap = pixmap.scaled(int(pixmap.height()),int(pixmap.width()))
+                    label.setPixmap(pixmap)
+                    label.setGeometry(362,200,128,128)
+                    label.show()
            
                 
+                QApplication.processEvents()    
                 
+                imgi = self.inverseFourier(downRightFrameZeros)
+                imgi = Image.fromarray(imgi)
+                imgi.save('myi.png')
+                if i % spinValue == 0 :
+                    pixmap2 = QPixmap('myi.png')
+                    pixmap2 = pixmap2.scaled(int(pixmap2.height()),int(pixmap2.width()))
+                    label1.setPixmap(pixmap2)
+                    label1.setGeometry(10,200,128,128)
+                    label1.show()
             
-            imgi = self.inverseFourier(downRightFrameZeros)
-            imgi = Image.fromarray(imgi)
-            imgi.save('myi.png')
-            pixmap2 = QPixmap('myi.png')
-            pixmap2 = pixmap2.scaled(int(pixmap2.height()),int(pixmap2.width()))
-            label1.setPixmap(pixmap2)
-            label1.setGeometry(10,200,128,128)
-            label1.show()
-            
-            time.sleep(0.009-spinValue*0.001)
-            step = step + 2
+            #time.sleep(0.009-spinValue*0.001)
+                time.sleep(0.009)
+                step = step + 2
 
                 
             #fourierImage = self.convertArrayToImage(downRightFrameZeros)
@@ -405,7 +418,7 @@ class Window(QMainWindow):
             #threading.Thread(target=self.showArrayImage, args=(fsimg,10,200,),daemon = True).start()
                 #self.showArrayImage(fsimg,10,200)
                 #time.sleep(0.2)
-            self.progress.setValue(i*(100/(value-1)))
+                self.progress.setValue(i*(100/(value-1)))
         
             
             #fourierImage = self.convertArrayToImage(downRightFrameZeros)
