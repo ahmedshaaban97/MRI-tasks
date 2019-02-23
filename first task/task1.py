@@ -55,12 +55,9 @@ class Window(QMainWindow):
         self.spinb = ''
         self.fimg = ''
         self.allowconvert = 0
-        self.layout()
         self.path = 'this is empyt pass'
-        
-        
         self.progress = 0
-        
+        self.layout()
         
         #self.threadClass = ThreadClass()
         #self.threadClass.start()
@@ -198,6 +195,13 @@ class Window(QMainWindow):
         magnitude_spectrum = np.uint8(magnitude_spectrum)
         return magnitude_spectrum
     
+    def HFT(self,path):
+        img = Image.open(path).convert('L')
+        arrayImage = self.convertImageToArray(img)
+        fourierImage = np.fft.fft2(arrayImage,axes=(0,1))
+        fourierImage = np.fft.fftshift(fourierImage)
+        return fourierImage
+    
     def inverseFourier(self,img):
         fourierImage = np.fft.fftshift(img)
         fourierImage = np.fft.ifft2(fourierImage)
@@ -281,7 +285,7 @@ class Window(QMainWindow):
         label1 = QLabel(self)
         
         #while 1 :
-        fourierFImage = self.fourierTransform(self.path)
+        fourierFImage = self.HFT(self.path)
             
         #print(fourierImage)
         
@@ -299,7 +303,7 @@ class Window(QMainWindow):
                 upFrameZeros = self.upFrameZeros(fourierFImage,i)
                 downFrameZeros = self.downFrameZeros(upFrameZeros,-1-i)
                 
-                img = Image.fromarray(downFrameZeros)
+                img = Image.fromarray(downFrameZeros.astype('uint8'))
                 img.save('my.png')
                 
                 #qimage = ImageQt(fsimg)
@@ -343,31 +347,50 @@ class Window(QMainWindow):
         
                 
         
+#    def upFrameZeros(self,img,position):
+#        #print('this is upFrameZeros')
+#        for i in range(128):
+#            for j in range(3):
+#                img[position][i][j] = 0
+#                img[i][position][j] = 0
+#            
+#        return img
+
     def upFrameZeros(self,img,position):
+         
         #print('this is upFrameZeros')
         for i in range(128):
-            for j in range(3):
-                img[position][i][j] = 0
-                img[i][position][j] = 0
-            
+             img[position][i] = 0
+             img[i][position]= 0
+                    
         return img
+    
+#    def downFrameZeros(self,img,position):
+#        #print('this is downFrameZeros')
+#        for i in range(128):
+#            for j in range(len(img[0][0])):
+#                img[position][i][j] = 0
+#                img[i][position][j] = 0
+#            
+#        return img
     
     def downFrameZeros(self,img,position):
         #print('this is downFrameZeros')
-        for i in range(128):
-            for j in range(len(img[0][0])):
-                img[position][i][j] = 0
-                img[i][position][j] = 0
+        for i in range(128):    
+            img[position][i] = 0
+            img[i][position] = 0
             
         return img
-    
+
+
+
     
     def zerosFromInToOut(self):
         label = QLabel(self)
         label1 = QLabel(self)
     
         #while 1 :
-        fourierFImage2 = self.fourierTransform(self.path)
+        fourierFImage2 = self.HFT(self.path)
         #print(fourierImage)
         #value = self.spinb.value()
         #value = self.spinb.value()
@@ -382,7 +405,7 @@ class Window(QMainWindow):
             #print('first run')
                 upLeftFrameZeros = self.upLeftFrameZeros(fourierFImage2,step,63-i)
                 downRightFrameZeros = self.downRightFrameZeros(upLeftFrameZeros,step,64+i)
-                img = Image.fromarray(downRightFrameZeros)
+                img = Image.fromarray(downRightFrameZeros.astype('uint8'))
                 img.save('my.png')
                 
                 #qimage = ImageQt(fsimg)
@@ -428,18 +451,32 @@ class Window(QMainWindow):
             
             #self.progress.setValue(i*(100/(value-1)))
        
+#    def upLeftFrameZeros(self,img,step,position):
+#        for i in range(step):
+#            for j in range(3):
+#                img[position][position+i][j] = 0
+#                img[(position+i)][position][j] = 0
+#        return img
+            
+            
     def upLeftFrameZeros(self,img,step,position):
         for i in range(step):
-            for j in range(3):
-                img[position][position+i][j] = 0
-                img[(position+i)][position][j] = 0
+            img[position][position+i] = 0
+            img[(position+i)][position] = 0
         return img
+            
+        
+#    def downRightFrameZeros(self,img,step,position):
+#        for i in range(step):
+#            for j in range(len(img[0][0])):
+#                img[position][position-i][j] = 0
+#                img[(position-i)][position][j] = 0
+#        return img
         
     def downRightFrameZeros(self,img,step,position):
         for i in range(step):
-            for j in range(len(img[0][0])):
-                img[position][position-i][j] = 0
-                img[(position-i)][position][j] = 0
+            img[position][position-i] = 0
+            img[(position-i)][position] = 0
         return img
         
     
