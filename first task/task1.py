@@ -1,6 +1,6 @@
 import sys
 from PyQt5 import QtCore, QtWidgets , QtGui
-from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget , QApplication,QPushButton,QLabel,QInputDialog,QSpinBox,QFileDialog,QProgressBar
+from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget , QApplication,QPushButton,QInputDialog,QSpinBox,QFileDialog,QProgressBar,QMessageBox
 from PyQt5.QtCore import QSize,pyqtSlot,QTimer,QThread
 from PyQt5.QtGui import QIcon, QPixmap
 from PIL import Image
@@ -54,6 +54,7 @@ class Window(QMainWindow):
         self.setGeometry(500,500,500,500)
         self.spinb = ''
         self.fimg = ''
+        self.pause = 0
         self.allowconvert = 0
         self.path = 'this is empyt pass'
         self.progress = 0
@@ -102,6 +103,7 @@ class Window(QMainWindow):
         
     @pyqtSlot()
     def on_click(self):
+        self.pause = 1
         self.changeConvertStatus()
         name = QFileDialog()
         imgPath = name.getOpenFileName(self,'open file','','Image files (*.jpg *.png *.jpeg)')
@@ -112,7 +114,7 @@ class Window(QMainWindow):
          im = Image.open(path)
          width, height = im.size
          if width > 128 or height > 128 :
-             print('invalid pic')
+             
              self.imgFalseMsg()
          else :
              self.path = path
@@ -130,6 +132,8 @@ class Window(QMainWindow):
              #thread2 = threading.Thread(target=self.showArrayImage, args=(modifiedImage,50,150,),daemon = True).start()
              self.convertButton()
              self.stopConverting()
+             self.pauseOp()
+             self.resumeOp()
              #self.helloThread = hiThread('ahmed')
              #self.connect(self.helloThread, SIGNAL("finished()"), self.sc)
              #self.helloThread.stopConverting()
@@ -151,10 +155,14 @@ class Window(QMainWindow):
              
         
     def imgFalseMsg(self):
-        li = QLabel(self)
-        li.setText('Invalid Photo size \n Photo must be \n 128*128')
-        li.setGeometry(10,30,128,128)
-        li.show()
+        #QMessageBox.about(self,'warning','invalid picture')
+        buttonReply = QMessageBox.question(self, 'PyQt5 message', "Do you like PyQt5?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if buttonReply == QMessageBox.Yes:
+            print('Yes clicked.')
+        else:
+            print('No clicked.')
+ 
+        self.show()
         
         
     def openImage(self,imagePath):
@@ -205,7 +213,7 @@ class Window(QMainWindow):
     def inverseFourier(self,img):
         fourierImage = np.fft.fftshift(img)
         fourierImage = np.fft.ifft2(fourierImage)
-        magnitude_spectrum = 20*np.log(np.abs(fourierImage))
+        magnitude_spectrum =    (np.abs(fourierImage))
         magnitude_spectrum = np.uint8(magnitude_spectrum)
         return magnitude_spectrum
     
@@ -250,8 +258,33 @@ class Window(QMainWindow):
         #btn.clicked.connect(self.zerosFromOutToIn)
         
         #btn.clicked.connect(self.zerosFromInToOut)
+        
+        
+        
+    def pauseOp(self):
+        btn = QPushButton('Pause',self)
+        btn.setToolTip('This is an example button')
+        btn.move(252,350)
+        print('this is the convert button function')
+        btn.show()
+        btn.clicked.connect(self.makePause)
+        
+        
+    def makePause(self):
+        self.pause =0
+        
     
         
+    def resumeOp(self):
+        btn = QPushButton('Resume',self)
+        btn.setToolTip('This is an example button')
+        btn.move(150,350)
+        print('this is the convert button function')
+        btn.show()
+        btn.clicked.connect(self.makeresume)
+    
+    def makeresume(self):
+        self.pause = 1
         
     def startConverting(self):
         self.allowconvert = 1
@@ -265,7 +298,7 @@ class Window(QMainWindow):
                 self.zerosFromInToOut()
                 print('you are allowed to convert')
                 #time.sleep(1)
-            
+#            
             if(self.allowconvert == 0):
                 print('stop is clicked')
                 break
@@ -297,6 +330,9 @@ class Window(QMainWindow):
             #print('this is the mult ', 100/value)
         
         for i in range(64):
+            while(self.pause ==0 ): 
+                QApplication.processEvents()
+                pass
             
             if self.allowconvert == 1:
             #print('first run')
@@ -332,6 +368,7 @@ class Window(QMainWindow):
                 time.sleep(0.009)
                 
                 
+            
             
                 
             #fourierImage = self.convertArrayToImage(downRightFrameZeros)
@@ -401,6 +438,11 @@ class Window(QMainWindow):
             #print('this is the mult ', 100/value)
         
         for i in range(64):
+            while(self.pause ==0 ): 
+                
+                QApplication.processEvents()
+                pass
+           
             if self.allowconvert == 1:
             #print('first run')
                 upLeftFrameZeros = self.upLeftFrameZeros(fourierFImage2,step,63-i)
@@ -433,7 +475,8 @@ class Window(QMainWindow):
             #time.sleep(0.009-spinValue*0.001)
                 time.sleep(0.009)
                 step = step + 2
-
+                
+                #while(self.pause == 0):
                 
             #fourierImage = self.convertArrayToImage(downRightFrameZeros)
                 #self.showArrayImage(newimg,10,200)
