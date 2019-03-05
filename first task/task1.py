@@ -12,35 +12,35 @@ import threading
 from scipy.fftpack import ifft
 
 
-class hiThread(QThread):
-
-    def __init__(self,name):
-        QThread.__init__(self)
-        
-
-    def __del__(self):
-        self.wait() 
-        
-    
-    def stopConverting(self):
-        btn = QPushButton("Convert InOut",self)
-        btn.setToolTip('This is an example button')
-        btn.move(390,200)
-        #print('this is the convert in outbutton function')
-        btn.show()
-        #threading.Thread(target=btn.clicked.connect,args=(self.changeConvertStatus,)).start()
-        btn.clicked.connect(self.changeConvertStatus)
-        
-    def hello(self):
-        while 1 :
-            
-            print('hello ')
-            time.sleep(1)
-            
-    def run(self):
-        self.hello()
-
-    
+#class hiThread(QThread):
+#
+#    def __init__(self,name):
+#        QThread.__init__(self)
+#        
+#
+#    def __del__(self):
+#        self.wait() 
+#        
+#    
+#    def stopConverting(self):
+#        btn = QPushButton("Convert InOut",self)
+#        btn.setToolTip('This is an example button')
+#        btn.move(390,200)
+#        #print('this is the convert in outbutton function')
+#        btn.show()
+#        #threading.Thread(target=btn.clicked.connect,args=(self.changeConvertStatus,)).start()
+#        btn.clicked.connect(self.changeConvertStatus)
+#        
+#    def hello(self):
+#        while 1 :
+#            
+#            print('hello ')
+#            time.sleep(1)
+#            
+#    def run(self):
+#        self.hello()
+#
+#    
         
         
  
@@ -155,14 +155,14 @@ class Window(QMainWindow):
              
         
     def imgFalseMsg(self):
-        #QMessageBox.about(self,'warning','invalid picture')
-        buttonReply = QMessageBox.question(self, 'PyQt5 message', "Do you like PyQt5?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        if buttonReply == QMessageBox.Yes:
-            print('Yes clicked.')
-        else:
-            print('No clicked.')
- 
-        self.show()
+         QMessageBox.about(self,'warning','invalid picture')
+#        buttonReply = QMessageBox.question(self, 'PyQt5 message', "Do you like PyQt5?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+#        if buttonReply == QMessageBox.Yes:
+#            print('Yes clicked.')
+#        else:
+#            print('No clicked.')
+# 
+#        self.show()
         
         
     def openImage(self,imagePath):
@@ -241,7 +241,7 @@ class Window(QMainWindow):
         btn = QPushButton("Convert Image",self)
         btn.setToolTip('This is an example button')
         btn.move(252,10)
-        print('this is the convert button function')
+        #print('this is the convert button function')
         btn.show()
         progressBar = self.progressBar()
         progressBar.show()
@@ -265,7 +265,7 @@ class Window(QMainWindow):
         btn = QPushButton('Pause',self)
         btn.setToolTip('This is an example button')
         btn.move(252,350)
-        print('this is the convert button function')
+        #print('this is the convert button function')
         btn.show()
         btn.clicked.connect(self.makePause)
         
@@ -279,7 +279,7 @@ class Window(QMainWindow):
         btn = QPushButton('Resume',self)
         btn.setToolTip('This is an example button')
         btn.move(150,350)
-        print('this is the convert button function')
+        #print('this is the convert button function')
         btn.show()
         btn.clicked.connect(self.makeresume)
     
@@ -296,11 +296,11 @@ class Window(QMainWindow):
             if self.allowconvert == 1:
                 self.zerosFromOutToIn()
                 self.zerosFromInToOut()
-                print('you are allowed to convert')
+                #print('you are allowed to convert')
                 #time.sleep(1)
 #            
             if(self.allowconvert == 0):
-                print('stop is clicked')
+                #print('stop is clicked')
                 break
         
         
@@ -350,7 +350,7 @@ class Window(QMainWindow):
                     label.setPixmap(pixmap)
                     label.setGeometry(362,200,128,128)
                     label.show()
-                    print (i)
+                    #print (i)
             
                 QApplication.processEvents()
                 
