@@ -50,8 +50,10 @@ class Window(QMainWindow):
         self.imgSize = 0
         self.path = 'this is empyt pass'
         self.currentPhantom = []
+        self.currentImgArray = []
         self.numOfPlots = 0
         self.show = 1
+        self.imglabel = ''
         #self.label1 = QLabel(self)
         self.layout()
         
@@ -146,6 +148,7 @@ class Window(QMainWindow):
          self.imgSize = self.sizeBox.currentText()
          self.imgType = self.typeBox.currentText()
          self.label1 = self.label()
+         self.imglabel = self.label1
          img = Image.open(path).convert('L')
          arrayImage = self.convertImageToArray(img)
          phantonArray = self.genrate_total_phantom(arrayImage)
@@ -163,22 +166,24 @@ class Window(QMainWindow):
              
              indexedArray = self.conver3dTo2dArray(phantonArray,index)
              #print('this is index array', indexedArray)
-             imgArray = Image.fromarray(indexedArray)
+             imgArray = Image.fromarray(indexedArray).convert('RGB')
+             self.currentImgArray = np.array(imgArray)
              QApplication.processEvents()
          #print(type(img))
-             self.showArrayImage(self.label1,imgArray,200,200)
+             self.showArrayImage(self.label1,self.currentImgArray,200,200)
              QApplication.processEvents()
          
     def showArrayImage(self,label,img,x,y):
         #label = QLabel(self)
+        img = Image.fromarray(img)
         qimage = ImageQt(img)
         pixmap = QPixmap.fromImage(qimage)
         label.setPixmap(pixmap)
         label.setGeometry(128,10,int(self.imgSize),int(self.imgSize))
         label.mousePressEvent = self.getPixel
         label.show()
-        
-        
+        #print('image is displayed')
+            
         
     def clearLabel(self):
         print('clear called')
@@ -210,9 +215,17 @@ class Window(QMainWindow):
     def getPixel (self, event):
         x = event.pos().x()
         y = event.pos().y()
+        self.givePixelColor(y,x)
+        self.showArrayImage(self.imglabel ,self.currentImgArray,200,200)
         t1,t2 = self.getPhantomPixelData(y,x)
         print(x,y)
         self.plot(t1,t2)
+        
+    def givePixelColor(self,row,colomn):
+        self.currentImgArray[row][colomn][0] = 255
+        self.currentImgArray[row][colomn][1] = 0
+        self.currentImgArray[row][colomn][2] = 0
+        print(self.currentImgArray[row][colomn])
         
     def getPhantomPixelData(self,row,col):
         t1 = self.currentPhantom[row][col][0]
