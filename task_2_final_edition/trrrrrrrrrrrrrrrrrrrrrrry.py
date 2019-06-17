@@ -1,0 +1,378 @@
+import time
+from PIL import Image ,ImageEnhance , ImageFilter
+import numpy as np
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtWidgets import QFileDialog , QMessageBox,QApplication
+from PyQt5.QtGui import QPixmap
+from mostafa import Ui_MainWindow
+import sys
+import qimage2ndarray
+import pyqtgraph as pg
+np.set_printoptions(threshold=np.nan)
+
+
+
+
+
+class ApplicationWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super(ApplicationWindow, self).__init__()
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+        self.ui.btn_logan.clicked.connect(self.logan_clicked) 
+        self.ui.lbl_phantom.hide()
+        self.ui.lbl_phantom.mousePressEvent = self.getPixel
+        self.ui.lbl_phantom.mouseDoubleClickEvent = self.draw_curve
+        self.ui.lbl_phantom.mouseMoveEvent = self.brightness_control
+        self.ui.btn_browse.clicked.connect(self.browse_clicked)
+        self.ui.kspace.clicked.connect(self.generate_kspace)
+
+        self.ratio=""
+        self.size=""
+        self.phantom_array=""
+        self.t1_array=""
+        self.t2_array=""
+        self.pd_array=""
+        self.ratio_cont=""
+        self.xx=""
+        self.yy=""
+        self.i =""
+        self.i =1
+        self.br=""
+        self.j=""
+        self.j=1
+    
+
+
+ 
+    
+
+    def draw_curve (self, event):
+        x = event.pos().x()
+        label_width= self.ui.lbl_phantom.width()
+        y = event.pos().y()
+        label_hight= self.ui.lbl_phantom.height()
+        get_x = int ((x/label_width)*self.size)
+        get_y = int ((y/label_hight)*self.size)
+        print (self.phantom_array[get_x][get_y]) 
+        t1=self.t1_array[get_x][get_y]        
+        t2=self.t2_array[get_x][get_y]        
+        print (self.pd_array[get_x][get_y])  
+        unitVector=[[0],[0],[1]]
+        theta=90
+        alpha=10
+        delta_t=500
+        x_curve , y_curve , z_curve =self.draw_curves(unitVector, delta_t , t1 , t2 , theta , alpha)
+        
+        self.ui.graphicsView_2.plot(x_curve)
+        self.ui.graphicsView_3.plot(y_curve)
+
+
+        
+
+    def getPixel (self, event):
+#        x=self.ui.lbl_phantom.height()
+        self.xx = event.pos().x()
+        self.yy = event.pos().y()
+        
+        
+    def brightness_control (self, event):
+#        x=self.ui.lbl_phantom.height()
+        x = event.pos().x()
+        y = event.pos().y()
+        if self.xx in range (x-10 , x+10) and self.yy>y:
+            self.i=self.i+self.br
+        elif self.xx in range (x-10 , x+10) and self.yy<y:
+            self.i=self.i-self.br
+        elif self.yy in range (y-10 , y+10) and self.xx>x:
+            self.j=self.j+10       
+        elif self.yy in range (y-10 , y+10) and self.xx<x:
+            self.j=self.j-10
+
+
+
+#        ratio=()
+#        print(y)
+#        print(x)
+        #print (x , y)
+      
+        
+    def browse_clicked (self ):
+        fileName, _filter = QFileDialog.getOpenFileName(self, "Open file", "", "Image files (*.bmp *.png *.gif *.jpg)")
+        self.path = fileName
+        if fileName:
+            if self.ui.CBox_size.currentText()== "128*128" :
+                self.size=128
+            elif self.ui.CBox_size.currentText()== "256*256" :
+                self.size=256
+            elif self.ui.CBox_size.currentText()== "512*512" :
+                self.size=512
+            self.phantom_choose (self.size , fileName)   
+            
+            
+    def logan_clicked (self):
+
+        self.ui.graphicsView_2.clear()
+        self.ui.graphicsView_3.clear()      
+        
+        
+        self.ratio=self.i=1
+
+        self.ratio_cont=self.j=1
+        if self.ui.CBox_size.currentText()== "128*128" :
+            self.size=30
+            path="sohaila.jpg"
+            self.br=.05
+        elif self.ui.CBox_size.currentText()== "256*256" :
+            self.size=256
+            path="phantom256.png"
+            self.br=.1
+        elif self.ui.CBox_size.currentText()== "512*512" :
+            self.size=512
+            path="phantom512.png"
+            self.br=.2
+
+        self.phantom_choose (self.size , path)   
+         
+    def phantom_choose (self , lbl_size , path):
+        self.ui.lbl_phantom.show()
+        array=self.convert_image_to_array(path)
+
+        self.t1_array,self.t2_array,self.phantom_array=self.Set_T1(array)
+
+
+
+        while 1:
+            self.ratio=self.i
+
+            self.ratio_cont=self.j
+
+            if self.ui.comboBox.currentText()== "phantom" :
+                array=self.phantom_array
+            elif self.ui.comboBox.currentText()== "T1 effect" :
+                array=self.t1_array
+            elif self.ui.comboBox.currentText()== "T2 effect" :
+                array=self.t2_array
+            elif self.ui.comboBox.currentText()== "PD effect" :
+                array=self.pd_array
+                
+                
+                
+            aaa=self.adding_image_to_lbl(array , self.ratio)
+            self.ui.lbl_phantom.setPixmap(aaa)
+            QApplication.processEvents()
+
+
+
+
+    def Set_T1(self,phantom_array):
+        t1_array=np.ones((self.size,self.size))
+        t2_array=np.ones((self.size,self.size))
+        phantom=np.ones((self.size,self.size))
+        Max_value= np.max (phantom_array)
+        Min_Value= np.min (phantom_array)
+        for x in range(0,self.size):
+            for y in range(0,self.size):
+                if (phantom_array[x][y] ==Max_value) :
+                    t1_array[x][y]=1090
+                    t2_array[x][y]=0
+                    phantom[x][y]=phantom_array[x][y]
+                else:
+                    if (phantom_array[x][y]==Min_Value):
+                        t1_array[x][y]=0
+                        t2_array[x][y]=1090
+                        phantom[x][y]=phantom_array[x][y]
+
+
+                    else:
+                        t1_array[x][y]=int(0+(phantom_array[x][y]*1090)/Max_value)
+                        t2_array[x][y]=int(1090-(phantom_array[x][y]*1090)/Max_value)
+                        phantom[x][y]=phantom_array[x][y]
+
+        return t1_array , t2_array , phantom
+    
+    
+#    def Set_T2(self,phantom_array):
+#        Max_value= max (phantom_array)
+#        Min_Value=min (phantom_array)
+#        for x in range(len(phantom_array)):
+#            for y in range(len(phantom_array)):
+#                if (phantom_array[x][y] ==Max_value) :
+#                    t2_array[x][y]=0
+#                else:
+#                    if (phantom_array[x][y]==Min_Value):
+#                        t2_array[x][y]=1090
+#                    else:
+#                        t2_array[x][y]=int(1090-(phantom_array[x][y]*1090)/Max_value)
+#        return t2_array   
+#    
+    
+
+        
+    
+    
+    
+    
+
+
+
+#    def genrate_total_phantom (self , phantom_array ):
+#        t1_array = np.ones((self.size,self.size))
+#        t2_array = np.ones((self.size,self.size))
+#        pd_array = np.ones((self.size,self.size))
+#        phantom_arrray = np.ones((self.size,self.size))
+#        for i in range (0 , self.size) :
+#            for j in range (0,self.size):
+#                if phantom_array[i][j]< 255 and phantom_array[i][j] >80 :
+#                    phantom_arrray[i][j]=phantom_array[i][j]
+#                    t1_array[i][j]=np.abs(int(1+ (phantom_array[i][j]*(2))))
+#                    t2_array[i][j]=np.abs(1+(256-t1_array[i][j]))
+#                    pd_array[i][j]=0
+#                elif phantom_array[i][j]< 100 and phantom_array[i][j] >20 :
+#                    phantom_arrray[i][j]=phantom_array[i][j]
+#                    t1_array[i][j]=np.abs(int (1+(phantom_array[i][j]*3)))
+#                    t2_array[i][j]=np.abs(1+(256-t1_array[i][j]))
+#                    pd_array[i][j]=100
+#
+#                else :
+#                    phantom_arrray[i][j]=phantom_array[i][j]
+#                    t1_array[i][j]=60+(phantom_array[i][j])
+#                    t2_array[i][j]=40+(phantom_array[i][j])
+#                    pd_array[i][j]=200
+#            aaa=self.adding_image_to_lbl(phantom_arrray , self.ratio)
+#            self.ui.lbl_phantom.setPixmap(aaa)
+#            QApplication.processEvents()
+#        
+#
+#        return phantom_array,t1_array,t2_array,pd_array
+
+    
+    def convert_image_to_array(self , path):
+        img=Image.open(path).convert('L')
+        img_array = np.asarray(img)
+        return img_array
+
+
+    def adding_image_to_lbl(self , aarray , bright_ratio):
+        mostafa = qimage2ndarray.array2qimage(np.absolute(aarray))
+        mostafa.save("output.jpg")
+        im = Image.open("output.jpg")
+        xxxx=self.change_contrast(im , self.ratio_cont)
+        xxxx.save("output.jpg")
+        im = Image.open("output.jpg")
+        enhancer = ImageEnhance.Brightness(im)
+        enhanced_im = enhancer.enhance(bright_ratio)
+        enhanced_im.save("enhanced.sample5.png")
+        im = Image.open("enhanced.sample5.png")
+        pixmap = QPixmap("enhanced.sample5.png")
+        pixmap = pixmap.scaled(int(pixmap.height()), int(pixmap.width()), QtCore.Qt.KeepAspectRatio)
+        return pixmap
+
+
+    def change_contrast(self,img, level):
+        factor = (259 * (level + 255)) / (255 * (259 - level))
+        def contrast(c):
+            value = 128 + factor * (c - 128)
+            return max(0, min(255, value))
+        return img.point(contrast)
+
+        
+    def draw_curves(self,unitVector, delta , t1 , t2 , theta , alpha):
+        x_curve=[]
+        y_curve=[]
+        z_curve=[]
+        theta = ((theta * 22/7 )/180)
+        rotationx = [[1,0,0],[0,np.cos(theta),np.sin(theta)],[0,-np.sin(theta),np.cos(theta)]]
+        rotationxy = [[np.cos(alpha),-np.sin(alpha),0],[-(np.sin(alpha)),np.cos(alpha),0],[0,0,1]]
+        for delta_t in range (delta):    
+            decayRecoveryArray = [[np.exp(-delta_t/t2),0,0], [0,np.exp(-delta_t/t2),0],[0,0,np.exp(-delta_t/t1)]]
+            finaldrArray = [[0],[0],[(1-(np.exp(-delta_t/t1)))]]
+            rotatedVector = np.matmul(rotationx,unitVector)
+            rotatedVector = np.matmul(rotationxy,rotatedVector)
+            rotatedVector = np.matmul(decayRecoveryArray,rotatedVector)
+            rotatedVector = finaldrArray+rotatedVector
+            x_curve.extend(rotatedVector[0])
+            y_curve.extend(rotatedVector[1])
+            z_curve.extend(rotatedVector[2])
+        return x_curve , y_curve , z_curve
+    
+    
+    def generate_kspace (self):
+        unitVector=[[0],[0],[1]]
+        theta=45
+        alpha=10
+        tr=5000
+        te=20
+        array=self.creare_Kspace(unitVector, te , tr, theta , alpha)
+        aaa=self.adding_image_to_lbl(array , 1)
+        self.ui.lbl_kspace.setPixmap(aaa)
+    
+    
+    
+    def creare_Kspace(self,unitVector, te ,tr ,  theta , alpha):
+        
+        t1=self.t1_array   
+        t2=self.t2_array
+
+        k_space=np.zeros((self.size,self.size), dtype = np.complex)
+        
+        signal = np.ones((self.size,self.size))
+        
+        for kspacerow in range(self.size):
+            
+        
+            signal = signal * np.exp(-te/t2)
+            
+            for kspacecol in range(self.size):
+                GX= 2*np.pi*kspacerow / self.size
+                GY= 2*np.pi*kspacecol / self.size
+                        
+                for i in range(self.size):
+                    for j in range(self.size):
+                        total_theta=(GX*i+GY*j)
+                        k_space[kspacerow, kspacecol] += signal[i,j]*np.exp(-1j*total_theta)
+                        
+            signal = 1 - np.exp(-tr/t1)
+        test1 = np.absolute(np.fft.ifft2(k_space))
+        test1*200
+        return test1
+
+
+
+
+def main(): 
+    app = QtWidgets.QApplication(sys.argv)
+    application = ApplicationWindow()
+    application.show()
+    sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()
+     
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+
